@@ -11,7 +11,6 @@ class Game {
     this.width = 1000;
     this.height = 800;
 
-    // this.level = new Level(50, this.width*2, this.height);
     this.renderer = new Renderer(this.width, this.height);
   }
 
@@ -20,7 +19,6 @@ class Game {
   }
 
   render() {
-    // render player
     this.renderer.render();
   }
 
@@ -33,12 +31,39 @@ class Game {
   start() {
     // Do any first time run here
     document.body.appendChild(this.renderer.view);
-    this.player = new Player(0x00CCDD, new PIXI.Point(250, 80), 50);
-    this.renderer.add(this.player);
+    this.player = new Player(new PIXI.Point(250, 80), 50);
+    this.level = new Level(50, 1500, 800);
+    this.renderer.addPlayer(this.player);
+    this.renderer.addLevel(this.level);
+    // Should wait for everything, then start loop
     this.loop();
   }
 
 }
+
+class Player {
+  constructor(position, size) {
+    this.position = position;
+    this.width = size, this.height = size;
+  }
+  update() {}
+}
+
+class Level {
+  constructor(size, width, height) {
+    this.size = size;
+    this.width = width;
+    this.height = height;
+
+    this.position = new PIXI.Point(150, 150);
+
+    this.cols = Math.floor(this.width/this.size);
+    this.rows = Math.floor(this.height/this.size);
+  }
+}
+
+let game = new Game("RogueTeam");
+game.start();
 
 let keyConfig = {
   65: "LEFT",
@@ -50,18 +75,6 @@ let keyConfig = {
   32: "SPACE",
 };
 
-class Player {
-  constructor(color, position, size) {
-    this.color = color;
-    this.position = position;
-
-    this.width = size, this.height = size;
-  }
-  update() {}
-}
-
-let game = new Game("RogueTeam");
-game.start();
 
 window.addEventListener('keydown', function(e) {
   let key = keyConfig[e.keyCode];
@@ -73,15 +86,19 @@ window.addEventListener('keydown', function(e) {
       game.player.position.x +=5;
       break;
     case "CAMLEFT":
-      game.renderer.camera.position.x -=5;
+      game.renderer.camera.position.x +=5;
+      game.level.position.x -= 1;
       break;
     case "CAMRIGHT":
-      game.renderer.camera.position.x +=5;
+      game.renderer.camera.position.x -=5;
+      game.level.position.x += 1;
       break;
     case "SPACE":
       console.info("player", game.player.position);
-      console.info("container", game.renderer.camera.position);
+      console.info("level", game.level);
+      console.info("container", game.renderer.camera);
       console.info("toWorld(player)", game.renderer.camera.toGlobal(game.player.position));
+      game.renderer.camera.zoom();
       break;
   }
 });
