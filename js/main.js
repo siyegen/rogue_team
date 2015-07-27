@@ -1,21 +1,18 @@
 console.log("Really cool code will go here");
 
 let Logger = require('./logger.js');
+let Renderer = require('./renderer.js');
 
 class Game {
   constructor(tagname) {
     this.tagname = tagname;
     this.logger = new Logger(tagname);
 
-    this.player = new Player(0x00CCDD, {x:0, y:0});
+    this.width = 1000;
+    this.height = 800;
 
-    this.width = 800;
-    this.height = 500;
-
-    this.stage = new PIXI.Stage(0xCCECCC, true);
-    this.renderer = PIXI.autoDetectRenderer(this.width, this.height);
-    this.camera = new PIXI.DisplayObjectContainer();
-    this.camera.position.x = this.width / 2, this.camera.position.y = this.height / 2;
+    // this.level = new Level(50, this.width*2, this.height);
+    this.renderer = new Renderer(this.width, this.height);
   }
 
   update() {
@@ -24,29 +21,20 @@ class Game {
 
   render() {
     // render player
-    this.player.ctx.clear();
-    this.logger.info(`Drawing:
-      ${this.player.ctx.x}, ${this.player.ctx.y}, ${this.player.width}, ${this.player.height}`);
-    this.player.ctx.beginFill(this.player.color, 1);
-    this.player.ctx.drawRect(
-      this.player.ctx.x, this.player.ctx.y,
-      this.player.width, this.player.height
-    );
-    this.player.ctx.endFill();
-    this.renderer.render(this.stage);
+    this.renderer.render();
   }
 
   loop() {
     this.update();
     this.render();
-    requestAnimFrame(() => this.loop());
+    requestAnimationFrame(() => this.loop());
   }
 
   start() {
     // Do any first time run here
     document.body.appendChild(this.renderer.view);
-    this.stage.addChild(this.camera);
-    this.camera.addChild(this.player.ctx);
+    this.player = new Player(0x00CCDD, new PIXI.Point(250, 80), 50);
+    this.renderer.add(this.player);
     this.loop();
   }
 
@@ -56,18 +44,18 @@ let keyConfig = {
   65: "LEFT",
   83: "DOWN",
   68: "RIGHT",
-  87: "UP"
+  87: "UP",
+  37: "CAMLEFT",
+  39: "CAMRIGHT",
+  32: "SPACE",
 };
 
 class Player {
-  constructor(color, position) {
+  constructor(color, position, size) {
     this.color = color;
     this.position = position;
 
-    this.width = 10, this.height = 10;
-    this.ctx = new PIXI.Graphics();
-    this.ctx.position.x = this.position.x;
-    this.ctx.position.y = this.position.y;
+    this.width = size, this.height = size;
   }
   update() {}
 }
@@ -77,13 +65,23 @@ game.start();
 
 window.addEventListener('keydown', function(e) {
   let key = keyConfig[e.keyCode];
-  console.log(key);
   switch(key) {
     case "LEFT":
-      console.log("left");
+      game.player.position.x -=5;
       break;
     case "RIGHT":
-      console.log("left");
+      game.player.position.x +=5;
+      break;
+    case "CAMLEFT":
+      game.renderer.camera.position.x -=5;
+      break;
+    case "CAMRIGHT":
+      game.renderer.camera.position.x +=5;
+      break;
+    case "SPACE":
+      console.info("player", game.player.position);
+      console.info("container", game.renderer.camera.position);
+      console.info("toWorld(player)", game.renderer.camera.toGlobal(game.player.position));
       break;
   }
 });

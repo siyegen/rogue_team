@@ -1,13 +1,14 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-"use strict";
+'use strict';
 
-var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
 
 console.log("Really cool code will go here");
 
 var Logger = require('./logger.js');
+var Renderer = require('./renderer.js');
 
 var Game = (function () {
   function Game(tagname) {
@@ -16,51 +17,42 @@ var Game = (function () {
     this.tagname = tagname;
     this.logger = new Logger(tagname);
 
-    this.player = new Player(0x00CCDD, { x: 0, y: 0 });
+    this.width = 1000;
+    this.height = 800;
 
-    this.width = 800;
-    this.height = 500;
-
-    this.stage = new PIXI.Stage(0xCCECCC, true);
-    this.renderer = PIXI.autoDetectRenderer(this.width, this.height);
-    this.camera = new PIXI.DisplayObjectContainer();
-    this.camera.position.x = this.width / 2, this.camera.position.y = this.height / 2;
+    // this.level = new Level(50, this.width*2, this.height);
+    this.renderer = new Renderer(this.width, this.height);
   }
 
   _createClass(Game, [{
-    key: "update",
+    key: 'update',
     value: function update() {
       // this.logger.info("update called");
     }
   }, {
-    key: "render",
+    key: 'render',
     value: function render() {
       // render player
-      this.player.ctx.clear();
-      this.logger.info("Drawing:\n      " + this.player.ctx.x + ", " + this.player.ctx.y + ", " + this.player.width + ", " + this.player.height);
-      this.player.ctx.beginFill(this.player.color, 1);
-      this.player.ctx.drawRect(this.player.ctx.x, this.player.ctx.y, this.player.width, this.player.height);
-      this.player.ctx.endFill();
-      this.renderer.render(this.stage);
+      this.renderer.render();
     }
   }, {
-    key: "loop",
+    key: 'loop',
     value: function loop() {
       var _this = this;
 
       this.update();
       this.render();
-      requestAnimFrame(function () {
+      requestAnimationFrame(function () {
         return _this.loop();
       });
     }
   }, {
-    key: "start",
+    key: 'start',
     value: function start() {
       // Do any first time run here
       document.body.appendChild(this.renderer.view);
-      this.stage.addChild(this.camera);
-      this.camera.addChild(this.player.ctx);
+      this.player = new Player(0x00CCDD, new PIXI.Point(250, 80), 50);
+      this.renderer.add(this.player);
       this.loop();
     }
   }]);
@@ -72,24 +64,24 @@ var keyConfig = {
   65: "LEFT",
   83: "DOWN",
   68: "RIGHT",
-  87: "UP"
+  87: "UP",
+  37: "CAMLEFT",
+  39: "CAMRIGHT",
+  32: "SPACE"
 };
 
 var Player = (function () {
-  function Player(color, position) {
+  function Player(color, position, size) {
     _classCallCheck(this, Player);
 
     this.color = color;
     this.position = position;
 
-    this.width = 10, this.height = 10;
-    this.ctx = new PIXI.Graphics();
-    this.ctx.position.x = this.position.x;
-    this.ctx.position.y = this.position.y;
+    this.width = size, this.height = size;
   }
 
   _createClass(Player, [{
-    key: "update",
+    key: 'update',
     value: function update() {}
   }]);
 
@@ -101,18 +93,28 @@ game.start();
 
 window.addEventListener('keydown', function (e) {
   var key = keyConfig[e.keyCode];
-  console.log(key);
   switch (key) {
     case "LEFT":
-      console.log("left");
+      game.player.position.x -= 5;
       break;
     case "RIGHT":
-      console.log("left");
+      game.player.position.x += 5;
+      break;
+    case "CAMLEFT":
+      game.renderer.camera.position.x -= 5;
+      break;
+    case "CAMRIGHT":
+      game.renderer.camera.position.x += 5;
+      break;
+    case "SPACE":
+      console.info("player", game.player.position);
+      console.info("container", game.renderer.camera.position);
+      console.info("toWorld(player)", game.renderer.camera.toGlobal(game.player.position));
       break;
   }
 });
 
-},{"./logger.js":2}],2:[function(require,module,exports){
+},{"./logger.js":2,"./renderer.js":3}],2:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -152,5 +154,64 @@ var Logger = (function () {
 })();
 
 module.exports = Logger;
+
+},{}],3:[function(require,module,exports){
+'use strict';
+
+var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
+
+module.exports = (function () {
+  function Renderer(viewportWidth, viewportHeight) {
+    _classCallCheck(this, Renderer);
+
+    this.stage = new PIXI.Container();
+    // viewport, more or less
+    this.standardCamera = new PIXI.Container();
+    // this.container.x = viewportWidth/2, this.container.y = viewportHeight/2;
+    this.renderer = PIXI.autoDetectRenderer(viewportWidth, viewportHeight);
+    this.stage.addChild(this.standardCamera);
+
+    // Test gfx
+    this.grid = new PIXI.Graphics();
+    this.grid.position.x = 0, this.grid.position.y = 0;
+    this.standardCamera.addChild(this.grid);
+  }
+
+  _createClass(Renderer, [{
+    key: 'render',
+    value: function render() {
+      this.renderer.render(this.stage);
+      // Test gfx
+      this.grid.clear();
+      this.grid.lineStyle(2, 0x7777FD, 1);
+      for (var i = 9; i >= 0; i--) {
+        this.grid.moveTo(i * 50, 0);
+        this.grid.lineTo(i * 50, 800);
+      }
+    }
+  }, {
+    key: 'add',
+    value: function add(obj) {
+      var sprite = new PIXI.Sprite.fromImage('./images/test-player.png');
+      sprite.anchor.x = 0.5, sprite.anchor.y = 0.5;
+      sprite.position = obj.position;
+      this.standardCamera.addChild(sprite);
+    }
+  }, {
+    key: 'view',
+    get: function get() {
+      return this.renderer.view;
+    }
+  }, {
+    key: 'camera',
+    get: function get() {
+      return this.standardCamera;
+    }
+  }]);
+
+  return Renderer;
+})();
 
 },{}]},{},[1])
