@@ -1,11 +1,13 @@
 module.exports = class Camera extends PIXI.Container {
-  constructor(position, width, height) {
+  constructor(position, world) {
     super();
     this.pivot.x = position.x, this.pivot.y = position.y;
     this.position.x = position.x, this.position.y = position.y;
-    this.width = width, this.height = height;
     this.scale = new PIXI.Point(1,1);
     this.isZoomed = false;
+    this.world = world;
+    this.addChild(this.world);
+    this.target = null;
   }
   zoom() {
     if (this.isZoomed) {
@@ -16,4 +18,5 @@ module.exports = class Camera extends PIXI.Container {
       this.isZoomed = true;
     }
   }
+  update() {}
 }

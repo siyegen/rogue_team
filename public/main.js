@@ -12,15 +12,17 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 module.exports = (function (_PIXI$Container) {
   _inherits(Camera, _PIXI$Container);
 
-  function Camera(position, width, height) {
+  function Camera(position, world) {
     _classCallCheck(this, Camera);
 
     _get(Object.getPrototypeOf(Camera.prototype), "constructor", this).call(this);
     this.pivot.x = position.x, this.pivot.y = position.y;
     this.position.x = position.x, this.position.y = position.y;
-    this.width = width, this.height = height;
     this.scale = new PIXI.Point(1, 1);
     this.isZoomed = false;
+    this.world = world;
+    this.addChild(this.world);
+    this.target = null;
   }
 
   _createClass(Camera, [{
@@ -34,6 +36,9 @@ module.exports = (function (_PIXI$Container) {
         this.isZoomed = true;
       }
     }
+  }, {
+    key: "update",
+    value: function update() {}
   }]);
 
   return Camera;
@@ -68,6 +73,7 @@ var Game = (function () {
     key: 'update',
     value: function update() {
       // this.logger.info("update called");
+      this.renderer.update();
     }
   }, {
     key: 'render',
@@ -141,12 +147,23 @@ var keyConfig = {
   87: "UP",
   37: "CAMLEFT",
   39: "CAMRIGHT",
-  32: "SPACE"
+  32: "SPACE",
+  90: "ZOOM",
+  70: "FOLLOW"
 };
+
+window.addEventListener('click', function (e) {
+  var point = new PIXI.Point(e.clientX, e.clientY);
+  console.log("point!", point);
+  console.log("click world position", game.renderer.world.toLocal(point));
+  console.info("player screen position", game.renderer.world.toGlobal(game.player.position));
+});
 
 window.addEventListener('keydown', function (e) {
   var key = keyConfig[e.keyCode];
   switch (key) {
+    case "FOLLOW":
+      break;
     case "LEFT":
       game.player.position.x -= 5;
       break;
@@ -162,10 +179,12 @@ window.addEventListener('keydown', function (e) {
       game.level.position.x += 1;
       break;
     case "SPACE":
-      console.info("player", game.player.position);
-      console.info("level", game.level);
-      console.info("container", game.renderer.camera);
-      console.info("toWorld(player)", game.renderer.camera.toGlobal(game.player.position));
+      console.info("player world position", game.player.position);
+      console.info("level", game.level.position);
+      console.info("camera", game.renderer.camera.position, game.renderer.camera.width, game.renderer.camera.height);
+      console.info("player screen position", game.renderer.world.toGlobal(game.player.position));
+      break;
+    case "ZOOM":
       game.renderer.camera.zoom();
       break;
   }
@@ -228,19 +247,24 @@ module.exports = (function () {
     var center = new PIXI.Point(Math.floor(viewportWidth / 2), Math.floor(viewportHeight / 2));
 
     this.stage = new PIXI.Container();
-    this.standardCamera = new Camera(center, viewportWidth, viewportHeight);
-    // this.standardCamera = new PIXI.Container();
+    this._world = new PIXI.Container();
+    this.standardCamera = new Camera(center, this._world);
     this.renderer = PIXI.autoDetectRenderer(viewportWidth, viewportHeight);
     this.stage.addChild(this.standardCamera);
 
     // Test gfx
     this.grid = new PIXI.Graphics();
     this.grid.position.x = 0, this.grid.position.y = 0;
-    this.standardCamera.addChild(this.grid);
+    this._world.addChild(this.grid);
     console.log(this.standardCamera);
   }
 
   _createClass(Renderer, [{
+    key: 'update',
+    value: function update() {
+      this.standardCamera.update();
+    }
+  }, {
     key: 'render',
     value: function render() {
       this.renderer.render(this.stage);
@@ -264,7 +288,7 @@ module.exports = (function () {
       var sprite = new PIXI.Sprite.fromImage('./images/test-player.png');
       sprite.anchor.x = 0.5, sprite.anchor.y = 0.5;
       sprite.position = player.position;
-      this.standardCamera.addChildAt(sprite, 1);
+      this._world.addChildAt(sprite, 1);
     }
   }, {
     key: 'addLevel',
@@ -274,7 +298,7 @@ module.exports = (function () {
       // tilingSprite.anchor.x = 0.5, tilingSprite.anchor.y = 0.5;
       tilingSprite.tilePosition = level.position;
       tilingSprite.position = new PIXI.Point(-150, -150);
-      this.standardCamera.addChildAt(tilingSprite, 0);
+      this._world.addChildAt(tilingSprite, 0);
       this.level = level;
     }
   }, {
@@ -286,6 +310,11 @@ module.exports = (function () {
     key: 'camera',
     get: function get() {
       return this.standardCamera;
+    }
+  }, {
+    key: 'world',
+    get: function get() {
+      return this._world;
     }
   }]);
 

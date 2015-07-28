@@ -5,16 +5,19 @@ module.exports = class Renderer {
     let center = new PIXI.Point(Math.floor(viewportWidth/2), Math.floor(viewportHeight/2));
 
     this.stage = new PIXI.Container();
-    this.standardCamera = new Camera(center, viewportWidth, viewportHeight);
-    // this.standardCamera = new PIXI.Container();
+    this._world = new PIXI.Container();
+    this.standardCamera = new Camera(center, this._world);
     this.renderer = PIXI.autoDetectRenderer(viewportWidth, viewportHeight);
     this.stage.addChild(this.standardCamera);
 
     // Test gfx
     this.grid = new PIXI.Graphics();
     this.grid.position.x = 0, this.grid.position.y = 0;
-    this.standardCamera.addChild(this.grid);
+    this._world.addChild(this.grid);
     console.log(this.standardCamera);
+  }
+  update() {
+    this.standardCamera.update();
   }
   render() {
     this.renderer.render(this.stage);
@@ -36,7 +39,7 @@ module.exports = class Renderer {
     let sprite = new PIXI.Sprite.fromImage('./images/test-player.png');
     sprite.anchor.x = 0.5, sprite.anchor.y = 0.5;
     sprite.position = player.position;
-    this.standardCamera.addChildAt(sprite, 1);
+    this._world.addChildAt(sprite, 1);
   }
   addLevel(level) {
     let texture = new PIXI.Texture.fromImage('./images/test-sky.png');
@@ -44,7 +47,7 @@ module.exports = class Renderer {
     // tilingSprite.anchor.x = 0.5, tilingSprite.anchor.y = 0.5;
     tilingSprite.tilePosition = level.position;
     tilingSprite.position = new PIXI.Point(-150, -150);
-    this.standardCamera.addChildAt(tilingSprite, 0);
+    this._world.addChildAt(tilingSprite, 0);
     this.level = level;
   }
   get view() {
@@ -52,5 +55,8 @@ module.exports = class Renderer {
   }
   get camera() {
     return this.standardCamera;
+  }
+  get world() {
+    return this._world;
   }
 }

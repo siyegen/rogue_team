@@ -16,6 +16,7 @@ class Game {
 
   update() {
     // this.logger.info("update called");
+    this.renderer.update();
   }
 
   render() {
@@ -73,12 +74,22 @@ let keyConfig = {
   37: "CAMLEFT",
   39: "CAMRIGHT",
   32: "SPACE",
+  90: "ZOOM",
+  70: "FOLLOW",
 };
 
+window.addEventListener('click', function(e) {
+  let point = new PIXI.Point(e.clientX, e.clientY);
+  console.log("point!", point)
+  console.log("click world position", game.renderer.world.toLocal(point));
+  console.info("player screen position", game.renderer.world.toGlobal(game.player.position));
+});
 
 window.addEventListener('keydown', function(e) {
   let key = keyConfig[e.keyCode];
   switch(key) {
+    case "FOLLOW":
+      break;
     case "LEFT":
       game.player.position.x -=5;
       break;
@@ -94,10 +105,15 @@ window.addEventListener('keydown', function(e) {
       game.level.position.x += 1;
       break;
     case "SPACE":
-      console.info("player", game.player.position);
-      console.info("level", game.level);
-      console.info("container", game.renderer.camera);
-      console.info("toWorld(player)", game.renderer.camera.toGlobal(game.player.position));
+      console.info("player world position", game.player.position);
+      console.info("level", game.level.position);
+      console.info("camera",
+        game.renderer.camera.position,
+        game.renderer.camera.width,
+        game.renderer.camera.height);
+      console.info("player screen position", game.renderer.world.toGlobal(game.player.position));
+      break;
+    case "ZOOM":
       game.renderer.camera.zoom();
       break;
   }
