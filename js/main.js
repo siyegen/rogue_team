@@ -15,7 +15,24 @@ class Game {
   }
 
   update() {
-    // this.logger.info("update called");
+    if (this.player.direction.x != 0) {
+      let [col, row] = this.player.tileCoord;
+      let moveTo = this.level.tileAt(col+this.player.direction.x, row);
+      if (moveTo != undefined && moveTo != 1) {
+        this.player.tileCoord = [col+this.player.direction.x, row];
+      }
+    }
+    if (this.player.direction.y != 0) {
+      let [col, row] = this.player.tileCoord;
+      let moveTo = this.level.tileAt(col, row+this.player.direction.y);
+      if (moveTo != undefined && moveTo != 1) {
+        this.player.tileCoord = [col, row+this.player.direction.y];
+      }
+    }
+    this.player.direction.x = 0;
+    this.player.direction.y = 0;
+    let [col, row] = this.player.tileCoord;
+    this.player.position.set((col*this.level.size)+this.level.size/2, (row*this.level.size)+this.level.size/2);
     this.renderer.update();
   }
 
@@ -32,10 +49,10 @@ class Game {
   start() {
     // Do any first time run here
     document.body.appendChild(this.renderer.view);
-    this.player = new Player(new PIXI.Point(250, 80), 50);
     this.level = new Level(50, 1500, 800);
-    this.renderer.addPlayer(this.player);
+    this.player = new Player(new PIXI.Point(250, 80), 50);
     this.renderer.addLevel(this.level);
+    this.renderer.addPlayer(this.player, 4, 2);
     // Should wait for everything, then start loop
     this.loop();
   }
@@ -46,8 +63,9 @@ class Player {
   constructor(position, size) {
     this.position = position;
     this.width = size, this.height = size;
+    this.direction = {x:0, y:0};
+    this.tileCoord = [0,0];
   }
-  update() {}
 }
 
 class Level {
@@ -55,11 +73,35 @@ class Level {
     this.size = size;
     this.width = width;
     this.height = height;
+    this.tiles = [];
 
     this.position = new PIXI.Point(150, 150);
 
     this.cols = Math.floor(this.width/this.size);
     this.rows = Math.floor(this.height/this.size);
+    this.generate();
+  }
+  generate() {
+    // All edges should be walls
+    let number = this.cols * this.rows;
+    for (var i = 0; i < number; i++) {
+      if (Math.trunc(i/this.cols) == 0 || Math.trunc(i/this.cols) == this.rows-1) {
+        this.tiles.push(1);
+      } else if (i%this.cols == 0 || i%this.cols == this.cols-1) {
+        this.tiles.push(1);
+      } else {
+        this.tiles.push(0);
+      }
+    };
+    // this.tiles[0] = 1, this.tiles[15] = 1,
+    // this.tiles[4] = 1, this.tiles[this.cols] = 1;
+    console.log("moo gen");
+  }
+  gridCoord(index) {
+    return [index%this.cols, Math.trunc(index/this.cols)];
+  }
+  tileAt(col, row) {
+    return this.tiles[row*this.cols + col]
   }
 }
 
@@ -90,11 +132,17 @@ window.addEventListener('keydown', function(e) {
   switch(key) {
     case "FOLLOW":
       break;
+    case "UP":
+      game.player.direction.y = -1;
+      break;
+    case "DOWN":
+      game.player.direction.y = 1;
+      break;
     case "LEFT":
-      game.player.position.x -=5;
+      game.player.direction.x = -1;
       break;
     case "RIGHT":
-      game.player.position.x +=5;
+      game.player.direction.x = 1;
       break;
     case "CAMLEFT":
       game.renderer.camera.position.x +=5;

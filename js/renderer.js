@@ -33,20 +33,37 @@ module.exports = class Renderer {
         this.grid.moveTo(0, i*this.level.size);
         this.grid.lineTo(this.level.width, i*this.level.size);
       }
+      // for (let i = this.level.rows * this.level.cols; i >= 0; i--) {
+      this.grid.beginFill(0x333333, 1);
+      for (let [index, tile] of this.level.tiles.entries()) {
+        if (tile == 1) {
+          let [col, row] = this.level.gridCoord(index);
+          this.grid.drawRect(col*this.level.size, row*this.level.size, this.level.size, this.level.size);
+        }
+      }
+      this.grid.endFill();
     }
   }
-  addPlayer(player) {
+  addPlayer(player, row, col) {
     let sprite = new PIXI.Sprite.fromImage('./images/test-player.png');
     sprite.anchor.x = 0.5, sprite.anchor.y = 0.5;
     sprite.position = player.position;
+
+    let tile = this.level.tileAt(col, row);
+    console.log(col*this.level.size, row*this.level.size);
+    if (tile != undefined && tile != 1) {
+      player.tileCoord = [col, row];
+      player.position.set((col*this.level.size)+this.level.size/2, (row*this.level.size)+this.level.size/2);
+    } else {
+      throw new RangeError("Player outside of valid range");
+    }
     this._world.addChildAt(sprite, 1);
   }
   addLevel(level) {
     let texture = new PIXI.Texture.fromImage('./images/test-sky.png');
     let tilingSprite = new PIXI.extras.TilingSprite(texture, level.width+300, level.height+300);
-    // tilingSprite.anchor.x = 0.5, tilingSprite.anchor.y = 0.5;
     tilingSprite.tilePosition = level.position;
-    tilingSprite.position = new PIXI.Point(-150, -150);
+    tilingSprite.position = new PIXI.Point(-level.position.x, -level.position.y);
     this._world.addChildAt(tilingSprite, 0);
     this.level = level;
   }

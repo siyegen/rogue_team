@@ -47,6 +47,8 @@ module.exports = (function (_PIXI$Container) {
 },{}],2:[function(require,module,exports){
 'use strict';
 
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
+
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
@@ -72,7 +74,37 @@ var Game = (function () {
   _createClass(Game, [{
     key: 'update',
     value: function update() {
-      // this.logger.info("update called");
+      if (this.player.direction.x != 0) {
+        var _player$tileCoord = _slicedToArray(this.player.tileCoord, 2);
+
+        var _col = _player$tileCoord[0];
+        var _row = _player$tileCoord[1];
+
+        var _moveTo = this.level.tileAt(_col + this.player.direction.x, _row);
+        if (_moveTo != undefined && _moveTo != 1) {
+          this.player.tileCoord = [_col + this.player.direction.x, _row];
+        }
+      }
+      if (this.player.direction.y != 0) {
+        var _player$tileCoord2 = _slicedToArray(this.player.tileCoord, 2);
+
+        var _col2 = _player$tileCoord2[0];
+        var _row2 = _player$tileCoord2[1];
+
+        var _moveTo2 = this.level.tileAt(_col2, _row2 + this.player.direction.y);
+        if (_moveTo2 != undefined && _moveTo2 != 1) {
+          this.player.tileCoord = [_col2, _row2 + this.player.direction.y];
+        }
+      }
+      this.player.direction.x = 0;
+      this.player.direction.y = 0;
+
+      var _player$tileCoord3 = _slicedToArray(this.player.tileCoord, 2);
+
+      var col = _player$tileCoord3[0];
+      var row = _player$tileCoord3[1];
+
+      this.player.position.set(col * this.level.size + this.level.size / 2, row * this.level.size + this.level.size / 2);
       this.renderer.update();
     }
   }, {
@@ -96,10 +128,10 @@ var Game = (function () {
     value: function start() {
       // Do any first time run here
       document.body.appendChild(this.renderer.view);
-      this.player = new Player(new PIXI.Point(250, 80), 50);
       this.level = new Level(50, 1500, 800);
-      this.renderer.addPlayer(this.player);
+      this.player = new Player(new PIXI.Point(250, 80), 50);
       this.renderer.addLevel(this.level);
+      this.renderer.addPlayer(this.player, 4, 2);
       // Should wait for everything, then start loop
       this.loop();
     }
@@ -108,34 +140,63 @@ var Game = (function () {
   return Game;
 })();
 
-var Player = (function () {
-  function Player(position, size) {
-    _classCallCheck(this, Player);
+var Player = function Player(position, size) {
+  _classCallCheck(this, Player);
 
-    this.position = position;
-    this.width = size, this.height = size;
+  this.position = position;
+  this.width = size, this.height = size;
+  this.direction = { x: 0, y: 0 };
+  this.tileCoord = [0, 0];
+};
+
+var Level = (function () {
+  function Level(size, width, height) {
+    _classCallCheck(this, Level);
+
+    this.size = size;
+    this.width = width;
+    this.height = height;
+    this.tiles = [];
+
+    this.position = new PIXI.Point(150, 150);
+
+    this.cols = Math.floor(this.width / this.size);
+    this.rows = Math.floor(this.height / this.size);
+    this.generate();
   }
 
-  _createClass(Player, [{
-    key: 'update',
-    value: function update() {}
+  _createClass(Level, [{
+    key: 'generate',
+    value: function generate() {
+      // All edges should be walls
+      var number = this.cols * this.rows;
+      for (var i = 0; i < number; i++) {
+        if (Math.trunc(i / this.cols) == 0 || Math.trunc(i / this.cols) == this.rows - 1) {
+          this.tiles.push(1);
+        } else if (i % this.cols == 0 || i % this.cols == this.cols - 1) {
+          this.tiles.push(1);
+        } else {
+          this.tiles.push(0);
+        }
+      };
+      // this.tiles[0] = 1, this.tiles[15] = 1,
+      // this.tiles[4] = 1, this.tiles[this.cols] = 1;
+      console.log("moo gen");
+    }
+  }, {
+    key: 'gridCoord',
+    value: function gridCoord(index) {
+      return [index % this.cols, Math.trunc(index / this.cols)];
+    }
+  }, {
+    key: 'tileAt',
+    value: function tileAt(col, row) {
+      return this.tiles[row * this.cols + col];
+    }
   }]);
 
-  return Player;
+  return Level;
 })();
-
-var Level = function Level(size, width, height) {
-  _classCallCheck(this, Level);
-
-  this.size = size;
-  this.width = width;
-  this.height = height;
-
-  this.position = new PIXI.Point(150, 150);
-
-  this.cols = Math.floor(this.width / this.size);
-  this.rows = Math.floor(this.height / this.size);
-};
 
 var game = new Game("RogueTeam");
 game.start();
@@ -164,11 +225,17 @@ window.addEventListener('keydown', function (e) {
   switch (key) {
     case "FOLLOW":
       break;
+    case "UP":
+      game.player.direction.y = -1;
+      break;
+    case "DOWN":
+      game.player.direction.y = 1;
+      break;
     case "LEFT":
-      game.player.position.x -= 5;
+      game.player.direction.x = -1;
       break;
     case "RIGHT":
-      game.player.position.x += 5;
+      game.player.direction.x = 1;
       break;
     case "CAMLEFT":
       game.renderer.camera.position.x += 5;
@@ -234,6 +301,8 @@ module.exports = Logger;
 },{}],4:[function(require,module,exports){
 'use strict';
 
+var _slicedToArray = (function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i['return']) _i['return'](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError('Invalid attempt to destructure non-iterable instance'); } }; })();
+
 var _createClass = (function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ('value' in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError('Cannot call a class as a function'); } }
@@ -280,14 +349,63 @@ module.exports = (function () {
           this.grid.moveTo(0, i * this.level.size);
           this.grid.lineTo(this.level.width, i * this.level.size);
         }
+        // for (let i = this.level.rows * this.level.cols; i >= 0; i--) {
+        this.grid.beginFill(0x333333, 1);
+        var _iteratorNormalCompletion = true;
+        var _didIteratorError = false;
+        var _iteratorError = undefined;
+
+        try {
+          for (var _iterator = this.level.tiles.entries()[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+            var _step$value = _slicedToArray(_step.value, 2);
+
+            var index = _step$value[0];
+            var tile = _step$value[1];
+
+            if (tile == 1) {
+              var _level$gridCoord = this.level.gridCoord(index);
+
+              var _level$gridCoord2 = _slicedToArray(_level$gridCoord, 2);
+
+              var col = _level$gridCoord2[0];
+              var row = _level$gridCoord2[1];
+
+              this.grid.drawRect(col * this.level.size, row * this.level.size, this.level.size, this.level.size);
+            }
+          }
+        } catch (err) {
+          _didIteratorError = true;
+          _iteratorError = err;
+        } finally {
+          try {
+            if (!_iteratorNormalCompletion && _iterator['return']) {
+              _iterator['return']();
+            }
+          } finally {
+            if (_didIteratorError) {
+              throw _iteratorError;
+            }
+          }
+        }
+
+        this.grid.endFill();
       }
     }
   }, {
     key: 'addPlayer',
-    value: function addPlayer(player) {
+    value: function addPlayer(player, row, col) {
       var sprite = new PIXI.Sprite.fromImage('./images/test-player.png');
       sprite.anchor.x = 0.5, sprite.anchor.y = 0.5;
       sprite.position = player.position;
+
+      var tile = this.level.tileAt(col, row);
+      console.log(col * this.level.size, row * this.level.size);
+      if (tile != undefined && tile != 1) {
+        player.tileCoord = [col, row];
+        player.position.set(col * this.level.size + this.level.size / 2, row * this.level.size + this.level.size / 2);
+      } else {
+        throw new RangeError("Player outside of valid range");
+      }
       this._world.addChildAt(sprite, 1);
     }
   }, {
@@ -295,9 +413,8 @@ module.exports = (function () {
     value: function addLevel(level) {
       var texture = new PIXI.Texture.fromImage('./images/test-sky.png');
       var tilingSprite = new PIXI.extras.TilingSprite(texture, level.width + 300, level.height + 300);
-      // tilingSprite.anchor.x = 0.5, tilingSprite.anchor.y = 0.5;
       tilingSprite.tilePosition = level.position;
-      tilingSprite.position = new PIXI.Point(-150, -150);
+      tilingSprite.position = new PIXI.Point(-level.position.x, -level.position.y);
       this._world.addChildAt(tilingSprite, 0);
       this.level = level;
     }
